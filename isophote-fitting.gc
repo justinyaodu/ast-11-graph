@@ -1,0 +1,35 @@
+#include "graph.gh"
+
+DIGRAPH(isophote_fitting)
+	original_image       [DATA INPUT]
+	geometric_parameters [DATA INPUT]
+	mask_image           [DATA INPUT]
+
+	fit_isophotes [COMPUTE]
+		original_image       -> fit_isophotes
+		geometric_parameters -> fit_isophotes [INDIRECT]
+		mask_image           -> fit_isophotes [INDIRECT]
+
+	object_location_successful [DECIDE]
+		fit_isophotes -> object_location_successful
+
+	decrease_object_locator_threshold [COMPUTE]
+		object_location_successful -> decrease_object_locator_threshold [NO]
+		decrease_object_locator_threshold -> fit_isophotes [LOOSE]
+
+	fitting_successful [DECIDE]
+		object_location_successful -> fitting_successful [YES]
+
+	at_minimum_harmonics [DECIDE]
+		fitting_successful -> at_minimum_harmonics [NO]
+
+	decrease_harmonics [COMPUTE]
+		at_minimum_harmonics -> decrease_harmonics [NO]
+		decrease_harmonics -> fit_isophotes [LOOSE]
+
+	abort [COMPUTE]
+		at_minimum_harmonics -> abort [YES]
+
+	isophote_table [DATA OUTPUT]
+		fitting_successful -> isophote_table [YES]
+ENDDI

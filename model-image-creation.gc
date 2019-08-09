@@ -1,0 +1,31 @@
+#include "graph.gh"
+
+DIGRAPH(model_image_creation)
+	isophote_table [DATA INPUT]
+
+	start_model_creation [COMPUTE]
+		isophote_table -> start_model_creation
+
+	model_creation_hung [DECIDE]
+		start_model_creation -> model_creation_hung
+
+	kill_model_creation_task [COMPUTE]
+		model_creation_hung -> kill_model_creation_task [YES]
+
+	model_creation_crashed [DECIDE]
+		model_creation_hung -> model_creation_crashed [NO]
+
+	using_higher_harmonics [DECIDE]
+		kill_model_creation_task -> using_higher_harmonics
+		model_creation_crashed -> using_higher_harmonics [YES]
+
+	disable_higher_harmonics [COMPUTE]
+		using_higher_harmonics -> disable_higher_harmonics [YES]
+		disable_higher_harmonics -> start_model_creation [LOOSE]
+
+	abort [COMPUTE]
+		using_higher_harmonics -> abort [NO]
+
+	model_image [DATA OUTPUT]
+		model_creation_crashed -> model_image [NO]
+ENDDI

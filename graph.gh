@@ -1,0 +1,33 @@
+#ifndef GRAPH_GH
+#define GRAPH_GH
+
+// graph macros
+#define DIGRAPH(NAME) digraph NAME { graph [layout=dot rankdir=TB forcelabels=true newrank=true] \
+node [style=filled fillcolor=white fontcolor=black penwidth=3]
+#define ENDDI }
+
+// subgraph macros
+#define SUBGRAPH(NAME, LABEL) subgraph cluster_ ## NAME { graph [style=dotted label=LABEL]
+#define ENDSUB }
+
+// shapes by node type
+#define COMPUTE shape=box
+#define DECIDE shape=diamond fillcolor="#dddddd"
+#define DATA shape=oval fillcolor="#ffffdd"
+
+// data node background colours
+#define INPUT fillcolor="#ffdddd"
+#define INPUT_AUX fillcolor="#ffeedd"
+#define OUTPUT fillcolor="#ddffdd"
+#define OUTPUT_AUX fillcolor="#ddeeff"
+
+// style macros
+#define HIDE style="invis"
+#define INDIRECT style="dashed"
+#define LOOSE constrain=false
+
+// label macros
+#define YES label="Yes"
+#define NO label="No"
+
+#endif

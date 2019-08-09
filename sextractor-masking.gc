@@ -1,0 +1,42 @@
+#include "graph.gh"
+
+DIGRAPH(sextractor_masking)
+	subtracted_image [DATA INPUT]
+	isophote_table [DATA INPUT]
+	flag_image [DATA INPUT]
+
+	run_sextractor [COMPUTE]
+		subtracted_image -> run_sextractor
+
+	segmentation_image [DATA]
+		run_sextractor -> segmentation_image
+
+	excessive_mask_check [COMPUTE]
+		isophote_table     -> excessive_mask_check [INDIRECT]
+		segmentation_image -> excessive_mask_check
+
+	masking_excessive [DECIDE]
+		excessive_mask_check -> masking_excessive
+
+	max_threshold_reached [DECIDE]
+		masking_excessive -> max_threshold_reached [YES]
+
+	abort [COMPUTE]
+		max_threshold_reached -> abort [YES]
+
+	increase_threshold [COMPUTE]
+		max_threshold_reached -> increase_threshold [NO]
+		increase_threshold -> run_sextractor [LOOSE]
+
+	combine_masks [COMPUTE]
+		masking_excessive  -> combine_masks [NO]
+		flag_image         -> combine_masks [INDIRECT]
+		segmentation_image -> combine_masks [INDIRECT]
+	combined_mask [DATA]
+		combine_masks -> combined_mask
+
+	convert_to_pixel_list [COMPUTE]
+		 combined_mask -> convert_to_pixel_list
+	mask_pixel_list [DATA OUTPUT]
+		convert_to_pixel_list -> mask_pixel_list
+ENDDI

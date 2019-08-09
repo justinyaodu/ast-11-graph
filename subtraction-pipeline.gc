@@ -1,0 +1,201 @@
+#include "graph.gh"
+
+// whether to show each pass of the pipeline
+#define SHOW_PASS_2
+#define SHOW_PASS_3
+#define SHOW_RMF
+
+// whether to show conversion of flag images into first-pass masks
+#define SHOW_FLAG
+
+// whether to show querying the galaxy catalog for geometric parameter values
+#define SHOW_GEOMPAR
+
+// whether to show the DS9 region files generated from isophote tables
+#define SHOW_REGION
+
+// whether to condense model image creation and model image subtraction
+// into a single step
+// #define SIMPLIFY_MODELING
+
+DIGRAPH(subtraction_pipeline)
+#ifdef SHOW_FLAG
+	flag_image [DATA INPUT]
+#endif
+	SUBGRAPH(original_image, "Original Image")
+		original_image [DATA INPUT]
+	ENDSUB
+#ifdef SHOW_GEOMPAR
+	galaxy_catalog [DATA INPUT]
+#endif
+
+#ifdef SHOW_FLAG
+	SUBGRAPH(masking_1, "Masking 1")
+		flag_image_conversion [COMPUTE]
+			flag_image -> flag_image_conversion
+		flag_mask [DATA]
+			flag_image_conversion -> flag_mask
+	ENDSUB
+#endif
+
+#ifdef SHOW_GEOMPAR
+	SUBGRAPH(geometric_parameters_query, "Geometric Parameters Query")
+		geometric_parameters_query [COMPUTE]
+			galaxy_catalog -> geometric_parameters_query
+		geometric_parameters [DATA]
+			geometric_parameters_query -> geometric_parameters
+	ENDSUB
+#endif
+	SUBGRAPH(pass_1, "Pass 1")
+		SUBGRAPH(isophote_fitting_1, "Isophote Fitting 1")
+			isophote_fitting_1 [COMPUTE]
+				original_image       -> isophote_fitting_1
+#ifdef SHOW_FLAG
+				flag_mask            -> isophote_fitting_1 [INDIRECT]
+#endif
+#ifdef SHOW_GEOMPAR
+				geometric_parameters -> isophote_fitting_1 [INDIRECT]
+#endif
+			isophote_table_1 [DATA]
+				isophote_fitting_1 -> isophote_table_1
+
+#ifdef SHOW_REGION
+			region_conversion_1 [COMPUTE]
+				isophote_table_1 -> region_conversion_1
+			isophote_regions_1 [DATA OUTPUT_AUX]
+				region_conversion_1 -> isophote_regions_1
+#endif
+		ENDSUB
+
+		SUBGRAPH(model_creation_subtraction_1, "Model Creation and Subtraction 1")
+#ifndef SIMPLIFY_MODELING
+			model_creation_1 [COMPUTE]
+				isophote_table_1 -> model_creation_1
+			model_image_1 [DATA]
+				model_creation_1 -> model_image_1
+#endif
+
+			model_subtraction_1 [COMPUTE]
+#ifdef SIMPLIFY_MODELING
+				isophote_table_1 -> model_subtraction_1
+#else
+				model_image_1    -> model_subtraction_1
+#endif
+				original_image   -> model_subtraction_1 [INDIRECT]
+			model_subtracted_image_1 [DATA OUTPUT]
+				model_subtraction_1 -> model_subtracted_image_1
+		ENDSUB
+	ENDSUB
+
+#ifdef SHOW_PASS_2
+	SUBGRAPH(masking_2, "Masking 2")
+		object_detection [COMPUTE]
+			model_subtracted_image_1 -> object_detection
+#ifdef SHOW_FLAG
+		object_mask [DATA]
+			object_detection -> object_mask
+
+		mask_combination [COMPUTE]
+			flag_mask   -> mask_combination [INDIRECT]
+			object_mask -> mask_combination
+		combined_mask [DATA]
+			mask_combination -> combined_mask
+#else
+		combined_mask [DATA]
+			object_detection -> combined_mask
+#endif
+	ENDSUB
+
+	SUBGRAPH(pass_2, "Pass 2")	
+		SUBGRAPH(isophote_fitting_2, "Isophote Fitting 2")
+			isophote_fitting_2 [COMPUTE]
+				original_image -> isophote_fitting_2
+				combined_mask  -> isophote_fitting_2 [INDIRECT]
+#ifdef SHOW_GEOMPAR
+				geometric_parameters -> isophote_fitting_2 [INDIRECT]
+#endif
+			isophote_table_2 [DATA]
+				isophote_fitting_2 -> isophote_table_2
+
+#ifdef SHOW_REGION
+			region_conversion_2 [COMPUTE]
+				isophote_table_2 -> region_conversion_2
+			isophote_regions_2 [DATA OUTPUT_AUX]
+				region_conversion_2 -> isophote_regions_2
+#endif
+		ENDSUB
+
+		SUBGRAPH(model_creation_subtraction_2, "Model Creation and Subtraction 2")
+#ifndef SIMPLIFY_MODELING
+			model_creation_2 [COMPUTE]
+				isophote_table_2 -> model_creation_2
+			model_image_2 [DATA]
+				model_creation_2 -> model_image_2
+#endif
+
+			model_subtraction_2 [COMPUTE]
+#ifdef SIMPLIFY_MODELING
+				isophote_table_2 -> model_subtraction_2
+#else
+				model_image_2    -> model_subtraction_2
+#endif
+				original_image   -> model_subtraction_2 [INDIRECT]
+			model_subtracted_image_2 [DATA OUTPUT]
+				model_subtraction_2 -> model_subtracted_image_2
+		ENDSUB
+	ENDSUB
+#endif
+
+#ifdef SHOW_RMF
+	SUBGRAPH(ring_median_filter, "Ring Median Filter")
+		ring_median_filter [COMPUTE]
+			original_image -> ring_median_filter
+		ring_median_filtered_image [DATA OUTPUT]
+			ring_median_filter -> ring_median_filtered_image
+	ENDSUB
+#endif
+
+#ifdef SHOW_PASS_3
+	SUBGRAPH(pass_3, "Pass 3")
+			SUBGRAPH(reference_data, "Reference Data")
+				reference_isophote_table [DATA]
+				reference_mask [DATA]
+			ENDSUB
+
+			SUBGRAPH(isophote_photometry_3, "Isophote Photometry 3")
+				isophote_photometry_3 [COMPUTE]
+					original_image           -> isophote_photometry_3
+					reference_isophote_table -> isophote_photometry_3 [INDIRECT]
+					reference_mask           -> isophote_photometry_3 [INDIRECT]
+				isophote_table_3 [DATA]
+					isophote_photometry_3 -> isophote_table_3
+
+#ifdef SHOW_REGION
+				region_conversion_3 [COMPUTE]
+					isophote_table_3 -> region_conversion_3
+				isophote_regions_3 [DATA OUTPUT_AUX]
+					region_conversion_3 -> isophote_regions_3
+#endif
+			ENDSUB
+			
+			SUBGRAPH(model_creation_subtraction_3, "Model Creation and Subtraction 3")
+#ifndef SIMPLIFY_MODELING
+				model_creation_3 [COMPUTE]
+					isophote_table_3 -> model_creation_3
+				model_image_3 [DATA]
+					model_creation_3 -> model_image_3
+#endif
+
+				model_subtraction_3 [COMPUTE]
+#ifdef SIMPLIFY_MODELING
+					isophote_table_3 -> model_subtraction_3
+#else
+					model_image_3    -> model_subtraction_3
+#endif
+					original_image   -> model_subtraction_3 [INDIRECT]
+				model_subtracted_image_3 [DATA OUTPUT]
+					model_subtraction_3 -> model_subtracted_image_3
+			ENDSUB
+	ENDSUB
+#endif
+ENDDI
