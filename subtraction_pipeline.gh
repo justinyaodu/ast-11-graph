@@ -1,22 +1,25 @@
 #include "graph.gh"
 
-// whether to show each pass of the pipeline
+/* macro definitions:
+
+whether to show each pass of the pipeline:
+#define SHOW_PASS_1
 #define SHOW_PASS_2
 #define SHOW_PASS_3
 #define SHOW_RMF
 
-// whether to show conversion of flag images into first-pass masks
+whether to show conversion of flag images into first-pass masks:
 #define SHOW_FLAG
 
-// whether to show querying the galaxy catalog for geometric parameter values
+whether to show querying the galaxy catalog for geometric parameter values:
 #define SHOW_GEOMPAR
 
-// whether to show the DS9 region files generated from isophote tables
+whether to show the DS9 region files generated from isophote tables:
 #define SHOW_REGION
 
-// whether to condense model image creation and model image subtraction
-// into a single step
-// #define SIMPLIFY_MODELING
+whether to condense model image creation and model image subtraction into a single step:
+#define SIMPLIFY_MODELING
+*/
 
 DIGRAPH(subtraction_pipeline)
 #ifdef SHOW_FLAG
@@ -46,6 +49,8 @@ DIGRAPH(subtraction_pipeline)
 			geometric_parameters_query -> geometric_parameters
 	ENDSUB
 #endif
+
+#ifdef SHOW_PASS_1
 	SUBGRAPH(pass_1, "Pass 1")
 		SUBGRAPH(isophote_fitting_1, "Isophote Fitting 1")
 			isophote_fitting_1 [COMPUTE]
@@ -86,6 +91,7 @@ DIGRAPH(subtraction_pipeline)
 				model_subtraction_1 -> model_subtracted_image_1
 		ENDSUB
 	ENDSUB
+#endif
 
 #ifdef SHOW_PASS_2
 	SUBGRAPH(masking_2, "Masking 2")

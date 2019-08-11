@@ -12,7 +12,9 @@ node [style=filled fillcolor=white fontcolor=black penwidth=3]
 
 // shapes by node type
 #define COMPUTE shape=box
-#define DECIDE shape=diamond fillcolor="#dddddd"
+// note the dummy attribute; allows smart_label.py to match the string 'DECIDE'
+// and automatically add a question mark to the end of the generated label text
+#define DECIDE shape=diamond fillcolor="#dddddd" _DECIDE=""
 #define DATA shape=oval fillcolor="#ffffdd"
 
 // data node background colours

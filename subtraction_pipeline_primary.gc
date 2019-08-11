@@ -1,0 +1,6 @@
+#define SHOW_PASS_1
+#define SHOW_PASS_2
+#define SHOW_GEOMPAR
+#define SHOW_FLAG
+
+#include "subtraction_pipeline.gh"

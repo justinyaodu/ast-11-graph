@@ -1,0 +1,20 @@
+#include "graph.gh"
+
+DIGRAPH(best_image)
+	does_ring_median_filtered_image_exist [DECIDE]
+	
+	does_model_subtracted_image_exist [DECIDE]
+		does_ring_median_filtered_image_exist -> does_model_subtracted_image_exist [YES]
+
+	does_best_file_exist [DECIDE]
+		does_model_subtracted_image_exist -> does_best_file_exist [YES]
+
+	indicate_ambiguity_and_abort [COMPUTE]
+		does_best_file_exist -> indicate_ambiguity_and_abort [NO]
+
+	image_listed_in_best_file [DATA OUTPUT]
+		does_best_file_exist -> image_listed_in_best_file [YES]
+
+	ring_median_filtered_image [DATA OUTPUT]
+		does_model_subtracted_image_exist -> ring_median_filtered_image [NO]
+ENDDI
