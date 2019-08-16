@@ -1,5 +1,7 @@
 #include "graph.gh"
 
+// THIS GRAPH IS INCOMPLETE!
+
 DIGRAPH(best_image)
 	does_ring_median_filtered_image_exist [DECIDE]
 	
